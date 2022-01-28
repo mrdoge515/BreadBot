@@ -3,6 +3,8 @@ import discord
 from discord.ext import commands
 from keep_alive import keep_alive
 
+maintenance = 1
+
 class MyClient(discord.Client):
   
   async def on_ready(self):
@@ -43,6 +45,22 @@ class MyClient(discord.Client):
       await message.channel.send(embed=embed)
       print('[Event handler] "Realtek17" event handled')
 
-client = MyClient()
+class MyClientMeintanance(discord.Client):
+  async def on_ready(self):
+    activity = discord.Game(name="BLOOD", type=3)
+    await client.change_presence(status=discord.Status.idle, activity=activity)
+    print('[System] Logged on as', self.user)
+    print('[System] Running version 1.0')
+
+
+
+if(maintenance == 1):
+  client = MyClientMeintanance()
+elif(maintenance == 0):
+  client = MyClient()
+else:
+  print('[System] Maintenance variable error')
+  exit()
+
 keep_alive()
 client.run(os.getenv('TOKEN'))
