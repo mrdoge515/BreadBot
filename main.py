@@ -42,5 +42,5 @@ class MyClient(discord.Client):
       await message.channel.send(embed=embed)
       print('[Event handler] "Realtek17" event handled')
 
-client = MyClient()
+client = MyClient();
 client.run(os.getenv('TOKEN'))
