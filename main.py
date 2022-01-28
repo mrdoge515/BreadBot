@@ -47,7 +47,7 @@ class MyClient(discord.Client):
 
 class MyClientMeintanance(discord.Client):
   async def on_ready(self):
-    activity = discord.Game(name="BLOOD", type=3)
+    activity = discord.Game(name="Bot under maintenance", type=3)
     await client.change_presence(status=discord.Status.idle, activity=activity)
     print('[System] Logged on as', self.user)
     print('[System] Running version 1.0')
