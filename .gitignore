@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+.uv/
+*.egg-info/
+dist/
+build/
+.python-version
+breadbot.db
