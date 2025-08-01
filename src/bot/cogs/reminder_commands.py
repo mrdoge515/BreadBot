@@ -8,6 +8,23 @@ from bot.modules import database
 from bot.modules.models import User_Timezone
 
 
+def get_user_tz(user_id: int) -> ZoneInfo:
+    with database.get_session() as session:
+        statement = (
+            sqlmodel.select(User_Timezone.timezone)
+            .where(User_Timezone.user_id == user_id)
+            .limit(1)
+        )
+        result = session.exec(statement).one_or_none()
+        session.commit()
+
+    tz = result if result else "UTC"
+    try:
+        return ZoneInfo(tz)
+    except Exception:
+        return ZoneInfo("UTC")
+    
+
 class Reminder_Commands(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -56,6 +73,7 @@ class Reminder_Commands(commands.Cog):
         text="What you want to be reminded about"
     )
     async def on(self, interaction: discord.Interaction, when: str, text: str):
+        print(get_user_tz(interaction.user.id))
         await interaction.response.send_message("Work in progress", ephemeral=True)
 
     @remind.command(
