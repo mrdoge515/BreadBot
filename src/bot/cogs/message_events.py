@@ -25,7 +25,7 @@ class Message_Events(commands.Cog):
         if message.author.id == self.bot.user.id:
             return
 
-        content = remove_skin_tones(message.content.strip()).lower()
+        content = remove_skin_tones(message.content.strip())
         if "Bread 👍" in content:
             await message.reply("Bread 👍")
     
