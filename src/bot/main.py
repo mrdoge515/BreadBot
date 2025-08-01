@@ -9,7 +9,9 @@ from bot.modules import database
 from bot.utils import get_discord_token
 
 
-bot = commands.Bot(intents=discord.Intents.all(), command_prefix="!")
+intents = discord.Intents.all()
+intents.message_content = True
+bot = commands.Bot(intents=intents, command_prefix="!")
 
 
 async def load_cogs():
