@@ -1,3 +1,4 @@
+import datetime
 from zoneinfo import ZoneInfo
 
 import discord
@@ -5,7 +6,7 @@ import sqlmodel
 from discord.ext import commands
 
 from bot.modules import database
-from bot.modules.models import User_Timezone
+from bot.modules.models import Reminder, User_Timezone
 
 
 def get_user_tz(user_id: int) -> ZoneInfo:
@@ -73,8 +74,30 @@ class Reminder_Commands(commands.Cog):
         text="What you want to be reminded about"
     )
     async def on(self, interaction: discord.Interaction, when: str, text: str):
-        print(get_user_tz(interaction.user.id))
-        await interaction.response.send_message("Work in progress", ephemeral=True)
+        source_tz = get_user_tz(interaction.user.id)
+        
+        try:
+            user_time = datetime.datetime.strptime(when, "%d-%m-%Y %H:%M")
+            user_time = user_time.replace(tzinfo=source_tz)
+            target_utc = user_time.astimezone(datetime.timezone.utc)
+        except ValueError:
+            await interaction.response.send_message(
+                "❌ Invalid format! Use `DD-MM-YYYY HH:MM`, e.g. `30-09-2025 14:30`.",
+                ephemeral=True
+            )
+            return
+        
+        with database.get_session() as session:
+            reminder = Reminder(user_id=interaction.user.id, time=target_utc, text=text)
+            session.add(reminder)
+            session.commit()
+
+        target_in_user = target_utc.astimezone(tz=source_tz)
+        fmt = target_in_user.strftime("%Y-%m-%d %H:%M %Z")
+        await interaction.response.send_message(
+            f"🕒 Absolute reminder set for **{fmt}** — Text: {text}",
+            ephemeral=True
+        )
 
     @remind.command(
         name="in",
