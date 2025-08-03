@@ -1,4 +1,5 @@
 import datetime
+import re
 from zoneinfo import ZoneInfo
 
 import discord
@@ -108,7 +109,36 @@ class Reminder_Commands(commands.Cog):
         text="What you want to be reminded about"
     )
     async def in_(self, interaction: discord.Interaction, offset: str, text: str):
-        await interaction.response.send_message("Work in progress", ephemeral=True)
+        match = re.fullmatch(r"(\d+)([smhdw])", offset.strip().lower())
+        if not match:
+            await interaction.response.send_message(
+                "❌ Invalid format. Use formats like `15m`, `3h`, `2d`, `1w`",
+                ephemeral=True)
+            return
+        
+        amount, unit = match.groups()
+        amount = int(amount)
+
+        multipliers = {
+            "s": {"seconds": amount},
+            "m": {"minutes": amount},
+            "h": {"hours": amount},
+            "d": {"days": amount},
+            "w": {"weeks": amount},
+        }
+
+        delta = datetime.timedelta(**multipliers[unit])
+        target = datetime.datetime.now(datetime.timezone.utc) + delta
+
+        with database.get_session() as session:
+            reminder = Reminder(user_id=interaction.user.id, time=target, text=text)
+            session.add(reminder)
+            session.commit()
+        
+        await interaction.response.send_message(
+            f"🕒 Parsed relative reminder: {target.isoformat()} (UTC)\nText: {text}",
+            ephemeral=True
+        )
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Reminder_Commands(bot))
