@@ -78,16 +78,43 @@ class Reminder_Commands(commands.Cog):
         source_tz = get_user_tz(interaction.user.id)
         
         try:
-            user_time = datetime.datetime.strptime(when, "%d-%m-%Y %H:%M")
-            user_time = user_time.replace(tzinfo=source_tz)
-            target_utc = user_time.astimezone(datetime.timezone.utc)
+            naive = datetime.datetime.strptime(when, "%d-%m-%Y %H:%M")
         except ValueError:
             await interaction.response.send_message(
                 "❌ Invalid format! Use `DD-MM-YYYY HH:MM`, e.g. `30-09-2025 14:30`.",
                 ephemeral=True
             )
             return
-        
+
+        try:
+            dt_fold0 = naive.replace(fold=0, tzinfo=source_tz)
+            dt_fold1 = naive.replace(fold=1, tzinfo=source_tz)
+            if dt_fold0.utcoffset() != dt_fold1.utcoffset():
+                await interaction.response.send_message(
+                    "❌ The specified local time is ambiguous due to daylight saving time ending. "
+                    "Please clarify (e.g., reissue with a notation like appending ` (second)` to indicate the later occurrence).",
+                    ephemeral=True
+                )
+                return
+
+            aware_local = naive.replace(fold=0, tzinfo=source_tz)
+
+            roundtrip = aware_local.astimezone(datetime.timezone.utc).astimezone(source_tz)
+            if (roundtrip.hour, roundtrip.minute) != (naive.hour, naive.minute):
+                await interaction.response.send_message(
+                    "❌ The specified local time does not exist due to daylight saving time starting (spring forward). Please choose a different time.",
+                    ephemeral=True
+                )
+                return
+        except Exception:
+            await interaction.response.send_message(
+                "❌ Unexpected error processing the time. Please try again.",
+                ephemeral=True
+            )
+            return
+
+        target_utc = aware_local.astimezone(datetime.timezone.utc)
+
         with database.get_session() as session:
             reminder = Reminder(user_id=interaction.user.id, time=target_utc, text=text)
             session.add(reminder)
