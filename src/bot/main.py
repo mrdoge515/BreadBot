@@ -28,6 +28,21 @@ async def load_cogs():
         except Exception as e:
             print(f"{colorama.Fore.RED}[x]{colorama.Fore.RESET} Extension {ext} failed to load. Details below:\n{e}")
         
+async def load_tasks():
+    tasks_path = pathlib.Path(__file__).parent / "tasks"
+
+    for file in sorted(tasks_path.glob("*.py")):
+        if file.name.startswith("_"):
+            continue
+        ext = f"bot.tasks.{file.stem}"
+
+        try:
+            await bot.load_extension(ext)
+            print(f"{colorama.Fore.GREEN}[✓]{colorama.Fore.RESET} Task {ext} loaded successfully")
+        except Exception as e:
+            print(f"{colorama.Fore.RED}[x]{colorama.Fore.RESET} Task {ext} failed to load. Details below:\n{e}")
+    
+
 async def async_main():
     token = ""
     try:
@@ -38,6 +53,7 @@ async def async_main():
 
     database.init_db()
     await load_cogs()
+    await load_tasks()
     await bot.start(token)
 
 def main():
